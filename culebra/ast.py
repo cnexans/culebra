@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from culebra.token import Token, TokenType
-from typing import List, Optional, Union
+from typing import List, Optional, Union, TypeVar, Generic
+
+T = TypeVar('T')
 
 
 class ASTNode(ABC):
@@ -76,7 +78,7 @@ class Program(Block):
     def __init__(self, statements: List[Statement]):
         super().__init__(statements)
 
-class LiteralValue[T](Expression, ABC):
+class LiteralValue(Generic[T], Expression, ABC):
     def __init__(self, token: Token, value: T):
         super().__init__(token)
         self.value = value
