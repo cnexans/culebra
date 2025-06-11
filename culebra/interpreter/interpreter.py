@@ -1,6 +1,7 @@
 from culebra import ast
 from culebra.interpreter.environment import Environment
 from culebra.token import TokenType
+from culebra.type_checker import TypeChecker, TypeErrorException
 
 """
 Culebra Interpreter Implementation
@@ -114,6 +115,12 @@ class Interpreter:
     def evaluate(self, program: ast.Program):
         self.last_error = None
         self.last_node = None
+        # Run type checker before interpretation
+        try:
+            TypeChecker().check(program)
+        except TypeErrorException as e:
+            self.last_error = e
+            raise e
         return self.eval_node(program, self.root_environment)
 
     def eval_node(self, node, environment):
