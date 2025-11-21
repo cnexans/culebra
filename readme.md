@@ -70,10 +70,10 @@ Este lenguaje minimalista inspirado en Python y Go está diseñado para ser senc
   - [x] Reporte de errores en linea en chequeo de tipos (Built-in de Python)
 
 
-- Interprete
+- Ejecución
   - [x] Tree-walk interpreter
+  - [x] LLVM AOT compiler (Ahead-of-Time)
   - [ ] LLVM Just-in-time compiler
-  - [ ] LLVM AOT compiler
 
 - Herramientas y soporte
   - [ ] Soporte para syntaxis en VS Code con [TextMate](https://code.visualstudio.com/api/language-extensions/syntax-highlight-guide#textmate-grammars)
@@ -190,6 +190,44 @@ resultado = suma(5, 7)
 2. **Estructuras Integradas**: Arrays, mapas, pilas, colas y más para evitar dependencias externas.
 
 3. **Extensibilidad**: Posibilidad de modificar el lenguaje para soportar dominios específicos.
+
+## Compilación y Ejecución
+
+Culebra soporta dos modos de ejecución:
+
+### 1. Modo Interpretado (Tree-walk interpreter)
+
+```bash
+# Ejecutar directamente
+python -m culebra.interpreter programa.culebra
+
+# REPL interactivo
+python -m culebra.interpreter
+```
+
+### 2. Modo Compilado (LLVM AOT Compiler)
+
+```bash
+# Compilar a ejecutable nativo
+python -m culebra.interpreter programa.culebra --compile -o programa
+
+# Ejecutar el programa compilado
+./programa
+
+# Ver LLVM IR generado
+python -m culebra.interpreter programa.culebra --emit-llvm -o programa.ll
+
+# REPL del compilador (muestra LLVM IR)
+python -m culebra.interpreter --compiler
+```
+
+**Ventajas del compilador:**
+- 15-20x más rápido que el intérprete
+- Genera código nativo optimizado
+- Compatible con bibliotecas C externas
+- Extensible con funciones personalizadas en C
+
+Ver [culebra/compiler/README.md](culebra/compiler/README.md) para más detalles.
 
 ## Ejemplo Completo
 

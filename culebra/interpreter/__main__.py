@@ -9,16 +9,25 @@ from culebra.token import TokenType
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Culebra interpreter or REPL')
+    parser = argparse.ArgumentParser(description='Culebra interpreter, compiler, or REPL')
 
     # Optional filename
-    parser.add_argument('filename', nargs='?', help='Source file to interpret')
+    parser.add_argument('filename', nargs='?', help='Source file to interpret or compile')
 
     # Mode flags
     mode_group = parser.add_mutually_exclusive_group()
     mode_group.add_argument('-l', '--lexer', action='store_true', help='Run lexer')
     mode_group.add_argument('-p', '--parser', action='store_true', help='Run parser')
     mode_group.add_argument('-i', '--interpreter', action='store_true', help='Run interpreter')
+    mode_group.add_argument('-c', '--compile', action='store_true', help='Compile to executable')
+    mode_group.add_argument('--compiler', action='store_true', help='Run compiler REPL (show LLVM IR)')
+
+    # Compiler flags
+    parser.add_argument('-o', '--output', help='Output file path')
+    parser.add_argument('--emit-llvm', action='store_true', help='Emit LLVM IR only (don\'t compile to executable)')
+    parser.add_argument('--keep-ir', action='store_true', help='Keep intermediate .ll file')
+    parser.add_argument('--no-optimize', action='store_true', help='Disable optimizations')
+    parser.add_argument('--runtime-lib', action='append', help='Additional C runtime library to link')
 
     # Parse arguments
     args = parser.parse_args()
@@ -29,6 +38,8 @@ def main():
             mode = "lexer"
         elif args.parser:
             mode = "parser"
+        elif args.compiler:
+            mode = "compiler"
         elif args.interpreter:
             mode = "interpreter"
         else:
@@ -41,6 +52,22 @@ def main():
         if not file_path.exists():
             print(f"Error: File '{args.filename}' not found")
             sys.exit(1)
+        
+        # Handle compilation mode
+        if args.compile or args.emit_llvm:
+            from culebra.compiler.compiler import compile_file
+            
+            success = compile_file(
+                source_file=str(file_path),
+                output_file=args.output,
+                emit_llvm=args.emit_llvm,
+                keep_ir=args.keep_ir,
+                optimize=not args.no_optimize,
+                runtime_libs=args.runtime_lib
+            )
+            
+            sys.exit(0 if success else 1)
+        
         try:
             # Read the source file
             with open(file_path, 'r') as f:
