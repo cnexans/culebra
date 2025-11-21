@@ -1,0 +1,140 @@
+# Test file for new collection types
+print("=== Testing Collections ===")
+
+# Test Arrays with push/pop
+print("\n--- Arrays ---")
+arr = [1, 2, 3]
+print("Initial array:")
+print(arr)
+print("Length:")
+print(len(arr))
+
+arr.push(4)
+print("After push(4):")
+print(arr)
+
+popped = arr.pop()
+print("Popped value:")
+print(popped)
+print("After pop():")
+print(arr)
+
+print("Access arr[1]:")
+print(arr[1])
+
+arr[1] = 10
+print("After arr[1] = 10:")
+print(arr)
+
+# Test Maps
+print("\n--- Maps ---")
+m = {"name": "Alice", "age": 30}
+print("Initial map:")
+print(m)
+print("Length:")
+print(len(m))
+
+print("Access m[\"name\"]:")
+print(m["name"])
+
+m["city"] = "NYC"
+print("After m[\"city\"] = \"NYC\":")
+print(m)
+
+print("m.has(\"age\"):")
+print(m.has("age"))
+
+print("m.has(\"country\"):")
+print(m.has("country"))
+
+print("m.get(\"age\"):")
+print(m.get("age"))
+
+print("m.get(\"country\"):")
+print(m.get("country"))
+
+m.set("country", "USA")
+print("After m.set(\"country\", \"USA\"):")
+print(m)
+
+m.remove("age")
+print("After m.remove(\"age\"):")
+print(m)
+
+# Test empty map constructor
+print("\n--- Empty Map ---")
+empty_m = Map()
+print("Empty map:")
+print(empty_m)
+empty_m.set("key", "value")
+print("After adding key:")
+print(empty_m)
+
+# Test Sets
+print("\n--- Sets ---")
+s = {1, 2, 3}
+print("Initial set:")
+print(s)
+print("Length:")
+print(len(s))
+
+s.add(4)
+print("After s.add(4):")
+print(s)
+
+s.add(2)
+print("After s.add(2) (duplicate):")
+print(s)
+
+print("s.has(3):")
+print(s.has(3))
+
+print("s.has(10):")
+print(s.has(10))
+
+s.remove(2)
+print("After s.remove(2):")
+print(s)
+
+# Test empty set constructor
+print("\n--- Empty Set ---")
+empty_s = Set()
+print("Empty set:")
+print(empty_s)
+empty_s.add(1)
+print("After adding 1:")
+print(empty_s)
+
+# Test Tuples
+print("\n--- Tuples ---")
+t = (1, 2, 3)
+print("Tuple:")
+print(t)
+print("Length:")
+print(len(t))
+
+print("Access t[1]:")
+print(t[1])
+
+t2 = ("hello", 42, "world")
+print("Mixed tuple:")
+print(t2)
+
+# Test nested structures
+print("\n--- Nested Structures ---")
+nested = [{"x": 1, "y": 2}, {"x": 3, "y": 4}]
+print("Nested array of maps:")
+print(nested)
+print("nested[0][\"x\"]:")
+print(nested[0]["x"])
+
+# Test chaining
+print("\n--- Method Chaining ---")
+arr2 = [1, 2]
+arr2.push(3)
+arr2.push(4)
+print("After chaining push operations:")
+print(arr2)
+
+print("\n=== All tests completed! ===")
+

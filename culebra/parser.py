@@ -378,6 +378,9 @@ class Parser:
         if self._current_token.type == TokenType.LBRACKET:
             return self._parse_array_literal()
 
+        if self._current_token.type == TokenType.LBRACE:
+            return self._parse_brace_expression()
+
         if self._current_token.type == TokenType.LPAREN:
             return self._parse_parentheses_group_expression()
 
@@ -387,9 +390,8 @@ class Parser:
         if self._current_token.type == TokenType.IDENTIFIER:
             factor = Identifier(self._current_token, self._current_token.literal)
             self._advance_token()
-            # Check for bracket access
-            if self._current_token and self._current_token.type == TokenType.LBRACKET:
-                return self._parse_bracket_access(factor)
+            # Check for bracket access or dot access
+            factor = self._parse_postfix_operations(factor)
             return factor
 
         if self._current_token.type == TokenType.NUMBER:
@@ -413,9 +415,8 @@ class Parser:
             string_content = self._process_escape_sequences(string_content)
             string = String(self._current_token, string_content)
             self._advance_token()
-            # Check for bracket access
-            if self._current_token and self._current_token.type == TokenType.LBRACKET:
-                return self._parse_bracket_access(string)
+            # Check for bracket access or dot access
+            string = self._parse_postfix_operations(string)
             return string
 
         if self._current_token.type == TokenType.BOOLEAN:
@@ -481,22 +482,59 @@ class Parser:
                 return None
 
         self._advance_token()
-        return FunctionCall(token, identifier, arguments)
+        func_call = FunctionCall(token, identifier, arguments)
+        # Check for chained bracket access or dot access
+        func_call = self._parse_postfix_operations(func_call)
+        return func_call
 
     def _parse_parentheses_group_expression(self) -> Optional[Expression]:
         assert self._current_token.type == TokenType.LPAREN
+        token = self._current_token
         self._advance_token()
+
+        # Check for empty parentheses - just return it as a syntax error
+        if self._current_token.type == TokenType.RPAREN:
+            self._expect_one_of([TokenType.IDENTIFIER, TokenType.NUMBER])
+            return None
 
         expr = self._parse_expression()
         if expr is None:
             return None
 
-        if self._current_token.type != TokenType.RPAREN:
-            self._expect_one_of([TokenType.RPAREN])
-            return None
+        # Check if it's a tuple (has comma) or just a grouped expression
+        if self._current_token.type == TokenType.COMMA:
+            # It's a tuple with 2+ elements
+            elements = [expr]
+            while self._current_token.type == TokenType.COMMA:
+                self._advance_token()
+                
+                # Allow trailing comma
+                if self._current_token.type == TokenType.RPAREN:
+                    break
+                    
+                element = self._parse_expression()
+                if element is None:
+                    return None
+                elements.append(element)
 
-        self._advance_token()
-        return expr
+            if not self._expect_one_of([TokenType.RPAREN]):
+                return None
+            self._advance_token()
+            
+            result = Tuple(token, elements)
+            # Check for postfix operations on tuples
+            result = self._parse_postfix_operations(result)
+            return result
+        else:
+            # Just a grouped expression
+            if self._current_token.type != TokenType.RPAREN:
+                self._expect_one_of([TokenType.RPAREN])
+                return None
+
+            self._advance_token()
+            # Check for postfix operations on grouped expressions
+            expr = self._parse_postfix_operations(expr)
+            return expr
 
     def _parse_function_definition(self):
         assert self._current_token.type == TokenType.FUNCTION_DEFINITION
@@ -675,6 +713,19 @@ class Parser:
         block = self._parse_block_statements()
         return block
 
+    def _parse_postfix_operations(self, target: Expression) -> Optional[Expression]:
+        """Parse chained bracket access and dot access operations."""
+        while self._current_token and self._current_token.type in [TokenType.LBRACKET, TokenType.DOT]:
+            if self._current_token.type == TokenType.LBRACKET:
+                target = self._parse_bracket_access(target)
+                if target is None:
+                    return None
+            elif self._current_token.type == TokenType.DOT:
+                target = self._parse_dot_access(target)
+                if target is None:
+                    return None
+        return target
+
     def _parse_bracket_access(self, target: Expression) -> Optional[Expression]:
         """Parse array/string index access with brackets."""
         assert self._current_token.type == TokenType.LBRACKET
@@ -690,6 +741,41 @@ class Parser:
         self._advance_token()
 
         return BracketAccess(token, target, index)
+
+    def _parse_dot_access(self, target: Expression) -> Optional[Expression]:
+        """Parse method call with dot notation."""
+        assert self._current_token.type == TokenType.DOT
+        token = self._current_token
+        self._advance_token()
+
+        # Expect method name (identifier)
+        if not self._expect_one_of([TokenType.IDENTIFIER]):
+            return None
+        method_name = self._current_token.literal
+        self._advance_token()
+
+        # Expect opening parenthesis
+        if not self._expect_one_of([TokenType.LPAREN]):
+            return None
+        self._advance_token()
+
+        # Parse arguments
+        arguments = []
+        while self._current_token.type != TokenType.RPAREN:
+            expr = self._parse_expression()
+            if expr is None:
+                return None
+            arguments.append(expr)
+
+            if self._current_token.type in [TokenType.COMMA]:
+                self._advance_token()
+                continue
+
+            if not self._expect_one_of([TokenType.COMMA, TokenType.RPAREN]):
+                return None
+
+        self._advance_token()
+        return DotAccess(token, target, method_name, arguments)
 
     def _parse_array_literal(self) -> Optional[Expression]:
         """Parse array literals like [1, 2, 3]"""
@@ -712,7 +798,105 @@ class Parser:
                 return None
 
         self._advance_token()
-        return Array(token, elements)
+        result = Array(token, elements)
+        # Check for postfix operations on arrays
+        result = self._parse_postfix_operations(result)
+        return result
+
+    def _parse_brace_expression(self) -> Optional[Expression]:
+        """Parse map literals {key: value} or set literals {value}"""
+        assert self._current_token.type == TokenType.LBRACE
+        token = self._current_token
+        self._advance_token()
+
+        # Check for empty braces - this is an error
+        if self._current_token.type == TokenType.RBRACE:
+            if not self.has_error:
+                error = f"Empty {{}} not allowed. Use Map() or Set() constructors for empty collections at position {token.pos}"
+                self.last_error = SyntaxError(error)
+                self.last_token = token
+            return None
+
+        # Parse the first element/pair to determine if it's a map or set
+        first_expr = self._parse_expression()
+        if first_expr is None:
+            return None
+
+        # Check if it's a map (has colon) or set (no colon)
+        if self._current_token.type == TokenType.COLON:
+            # It's a map
+            return self._parse_map_continuation(token, first_expr)
+        else:
+            # It's a set
+            return self._parse_set_continuation(token, first_expr)
+
+    def _parse_map_continuation(self, token: Token, first_key: Expression) -> Optional[Expression]:
+        """Continue parsing a map after the first key"""
+        pairs = []
+        
+        # Parse first pair
+        assert self._current_token.type == TokenType.COLON
+        self._advance_token()
+        first_value = self._parse_expression()
+        if first_value is None:
+            return None
+        pairs.append((first_key, first_value))
+
+        # Parse remaining pairs
+        while self._current_token.type == TokenType.COMMA:
+            self._advance_token()
+            
+            # Allow trailing comma
+            if self._current_token.type == TokenType.RBRACE:
+                break
+                
+            key = self._parse_expression()
+            if key is None:
+                return None
+            
+            if not self._expect_one_of([TokenType.COLON]):
+                return None
+            self._advance_token()
+            
+            value = self._parse_expression()
+            if value is None:
+                return None
+            pairs.append((key, value))
+
+        if not self._expect_one_of([TokenType.RBRACE]):
+            return None
+        self._advance_token()
+        
+        result = Map(token, pairs)
+        # Check for postfix operations on maps
+        result = self._parse_postfix_operations(result)
+        return result
+
+    def _parse_set_continuation(self, token: Token, first_element: Expression) -> Optional[Expression]:
+        """Continue parsing a set after the first element"""
+        elements = [first_element]
+
+        # Parse remaining elements
+        while self._current_token.type == TokenType.COMMA:
+            self._advance_token()
+            
+            # Allow trailing comma
+            if self._current_token.type == TokenType.RBRACE:
+                break
+                
+            expr = self._parse_expression()
+            if expr is None:
+                return None
+            elements.append(expr)
+
+        if not self._expect_one_of([TokenType.RBRACE]):
+            return None
+        self._advance_token()
+        
+        result = Set(token, elements)
+        # Check for postfix operations on sets
+        result = self._parse_postfix_operations(result)
+        return result
 
     def _parse_assignment_target(self) -> Optional[Expression]:
         # Only identifiers are valid as assignment base targets.

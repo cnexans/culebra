@@ -1,0 +1,66 @@
+# Test file for sorting and file operations
+print("=== Testing Sort and File Operations ===")
+
+# Test array sorting
+print("\n--- Array Sorting ---")
+nums = [5, 2, 8, 1, 9]
+print("Original array:")
+print(nums)
+
+nums.sort()
+print("After sort():")
+print(nums)
+
+# Test string array sorting
+strs = ["zebra", "apple", "banana", "cherry"]
+print("\nString array:")
+print(strs)
+strs.sort()
+print("After sort():")
+print(strs)
+
+# Test empty array sort
+empty = []
+empty.sort()
+print("\nEmpty array after sort:")
+print(empty)
+
+# Test string split
+print("\n--- String Split ---")
+text = "hello,world,test"
+parts = text.split(",")
+print("Split 'hello,world,test' by comma:")
+print(parts)
+
+line = "1   2   3"
+nums_str = line.split("   ")
+print("\nSplit '1   2   3' by three spaces:")
+print(nums_str)
+
+# Test type conversions
+print("\n--- Type Conversions ---")
+x = int("42")
+print("int('42'):")
+print(x)
+
+y = float("3.14")
+print("\nfloat('3.14'):")
+print(y)
+
+s = str(123)
+print("\nstr(123):")
+print(s)
+
+# Test abs
+print("\n--- Absolute Value ---")
+print("abs(-5):")
+print(abs(-5))
+
+print("abs(3.14):")
+print(abs(3.14))
+
+print("abs(-10):")
+print(abs(-10))
+
+print("\n=== All basic tests completed! ===")
+

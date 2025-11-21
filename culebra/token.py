@@ -8,6 +8,7 @@ class TokenType(Enum):
     ASSIGN  = auto()
     COMMA   = auto()
     COLON   = auto()
+    DOT     = auto()
     LPAREN  = auto()
     RPAREN  = auto()
     LBRACE  = auto()

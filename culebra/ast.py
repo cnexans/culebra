@@ -320,3 +320,62 @@ class Array(Expression):
     @property
     def children(self) -> List['ASTNode']:
         return self.elements
+
+class Map(Expression):
+    def __init__(self, token: Token, pairs: List[tuple[Expression, Expression]]):
+        super().__init__(token)
+        self.pairs = pairs  # List of (key, value) tuples
+
+    def __repr__(self) -> str:
+        pairs_str = ", ".join(f"{k}: {v}" for k, v in self.pairs)
+        return f"{self.node_name}({{{pairs_str}}})"
+
+    @property
+    def children(self) -> List['ASTNode']:
+        # Flatten all keys and values into a single list
+        result = []
+        for key, value in self.pairs:
+            result.append(key)
+            result.append(value)
+        return result
+
+class Set(Expression):
+    def __init__(self, token: Token, elements: List[Expression]):
+        super().__init__(token)
+        self.elements = elements
+
+    def __repr__(self) -> str:
+        elements_str = ", ".join(str(elem) for elem in self.elements)
+        return f"{self.node_name}({{{elements_str}}})"
+
+    @property
+    def children(self) -> List['ASTNode']:
+        return self.elements
+
+class Tuple(Expression):
+    def __init__(self, token: Token, elements: List[Expression]):
+        super().__init__(token)
+        self.elements = elements
+
+    def __repr__(self) -> str:
+        elements_str = ", ".join(str(elem) for elem in self.elements)
+        return f"{self.node_name}(({elements_str}))"
+
+    @property
+    def children(self) -> List['ASTNode']:
+        return self.elements
+
+class DotAccess(Expression):
+    def __init__(self, token: Token, target: Expression, method_name: str, arguments: List[Expression]):
+        super().__init__(token)
+        self.target = target
+        self.method_name = method_name
+        self.arguments = arguments
+
+    def __repr__(self) -> str:
+        args_str = ", ".join(str(arg) for arg in self.arguments)
+        return f"{self.node_name}({self.target}.{self.method_name}({args_str}))"
+
+    @property
+    def children(self) -> List['ASTNode']:
+        return [self.target] + self.arguments

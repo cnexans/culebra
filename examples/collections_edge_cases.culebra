@@ -1,0 +1,85 @@
+# Edge case tests for collections
+print("=== Edge Case Tests ===")
+
+# Test single-element set (should be a set, not just the value)
+print("\n--- Single Element Set ---")
+s1 = {5}
+print("Single element set {5}:")
+print(s1)
+print("Type check - has method:")
+print(s1.has(5))
+
+# Test nested collections
+print("\n--- Nested Collections ---")
+nested_map = {"users": [{"name": "Alice"}, {"name": "Bob"}]}
+print("Nested map with array of maps:")
+print(nested_map)
+print("Access nested_map[\"users\"][0][\"name\"]:")
+print(nested_map["users"][0]["name"])
+
+# Test tuple with 2 elements (minimum for tuple)
+print("\n--- Two Element Tuple ---")
+t2 = (1, 2)
+print("Two element tuple:")
+print(t2)
+print("len(t2):")
+print(len(t2))
+
+# Test that single element in parens is not a tuple
+print("\n--- Single Element in Parens (Not a Tuple) ---")
+val = (42)
+print("val = (42):")
+print(val)
+
+# Test map with numeric keys
+print("\n--- Map with Numeric Keys ---")
+num_map = {1: "one", 2: "two", 3: "three"}
+print("Map with numeric keys:")
+print(num_map)
+print("num_map[2]:")
+print(num_map[2])
+
+# Test set with strings
+print("\n--- Set with Strings ---")
+str_set = {"apple", "banana", "cherry"}
+print("Set with strings:")
+print(str_set)
+print("str_set.has(\"banana\"):")
+print(str_set.has("banana"))
+
+# Test empty array still works
+print("\n--- Empty Array ---")
+empty_arr = []
+print("Empty array:")
+print(empty_arr)
+print("len(empty_arr):")
+print(len(empty_arr))
+empty_arr.push(1)
+print("After push(1):")
+print(empty_arr)
+
+# Test tuple as map key
+print("\n--- Tuple as Map Key ---")
+tuple_key_map = {(1, 2): "value1", (3, 4): "value2"}
+print("Map with tuple keys:")
+print(tuple_key_map)
+print("tuple_key_map[(1, 2)]:")
+print(tuple_key_map[(1, 2)])
+
+# Test chained method calls and bracket access
+print("\n--- Chained Operations ---")
+data = [{"items": [1, 2, 3]}]
+print("Complex data structure:")
+print(data)
+print("data[0][\"items\"][1]:")
+print(data[0]["items"][1])
+
+# Test map.get with missing key returns None
+print("\n--- Map.get with Missing Key ---")
+m = {"a": 1}
+result = m.get("missing")
+print("m.get(\"missing\"):")
+print(result)
+
+print("\n=== All edge case tests completed! ===")
+

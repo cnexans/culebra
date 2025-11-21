@@ -147,6 +147,14 @@ class Interpreter:
                 return self.evaluate_bracket_access(node, environment)
             elif isinstance(node, ast.Array):
                 return self.evaluate_array(node, environment)
+            elif isinstance(node, ast.Map):
+                return self.evaluate_map(node, environment)
+            elif isinstance(node, ast.Set):
+                return self.evaluate_set(node, environment)
+            elif isinstance(node, ast.Tuple):
+                return self.evaluate_tuple(node, environment)
+            elif isinstance(node, ast.DotAccess):
+                return self.evaluate_dot_access(node, environment)
             else:
                 raise TypeError(f"Unexpected AST node type: {type(node)}")
         except Exception as e:
@@ -271,23 +279,170 @@ class Interpreter:
         target = self.eval_node(node.target, environment)
         index = self.eval_node(node.index, environment)
         
-        # Ensure index is an integer
-        if not isinstance(index, int):
-            raise TypeError(f"Index must be an integer, got {type(index)}")
+        # Handle maps (dicts) - key can be any hashable type
+        if isinstance(target, dict):
+            if not isinstance(index, (str, int, float, bool, tuple)):
+                raise TypeError(f"Map keys must be hashable (string, number, bool, or tuple), got {type(index).__name__}")
+            if index not in target:
+                raise KeyError(f"Key not found: {index}")
+            return target[index]
         
-        # Support both strings and arrays
-        if not isinstance(target, (str, list)):
-            raise TypeError(f"Bracket access only supports strings and arrays, got {type(target)}")
+        # Handle arrays, strings, and tuples - index must be an integer
+        if isinstance(target, (str, list, tuple)):
+            if not isinstance(index, int):
+                raise TypeError(f"Index must be an integer, got {type(index).__name__}")
+            
+            # Check index bounds
+            if index < 0 or index >= len(target):
+                raise IndexError(f"Index {index} out of range for {type(target).__name__} of length {len(target)}")
+            
+            return target[index]
         
-        # Check index bounds
-        if index < 0 or index >= len(target):
-            raise IndexError(f"Index {index} out of range for {type(target)} of length {len(target)}")
-        
-        return target[index]
+        # Unsupported type
+        raise TypeError(f"Bracket access only supports arrays, strings, tuples, and maps, got {type(target).__name__}")
 
     def evaluate_array(self, node, environment):
         # Evaluate each element in the array
         return [self.eval_node(element, environment) for element in node.elements]
+
+    def evaluate_map(self, node, environment):
+        # Evaluate each key-value pair in the map
+        result = {}
+        for key_node, value_node in node.pairs:
+            key = self.eval_node(key_node, environment)
+            value = self.eval_node(value_node, environment)
+            # Keys must be hashable (strings, numbers, tuples, bools)
+            if not isinstance(key, (str, int, float, bool, tuple)):
+                raise TypeError(f"Map keys must be hashable (string, number, bool, or tuple), got {type(key).__name__}")
+            result[key] = value
+        return result
+
+    def evaluate_set(self, node, environment):
+        # Evaluate each element in the set
+        result = set()
+        for element_node in node.elements:
+            element = self.eval_node(element_node, environment)
+            # Set elements must be hashable
+            if not isinstance(element, (str, int, float, bool, tuple)):
+                raise TypeError(f"Set elements must be hashable (string, number, bool, or tuple), got {type(element).__name__}")
+            result.add(element)
+        return result
+
+    def evaluate_tuple(self, node, environment):
+        # Evaluate each element in the tuple and return as Python tuple
+        return tuple(self.eval_node(element, environment) for element in node.elements)
+
+    def evaluate_dot_access(self, node, environment):
+        # This will be implemented in the next step with method dispatch
+        target = self.eval_node(node.target, environment)
+        method_name = node.method_name
+        arguments = [self.eval_node(arg, environment) for arg in node.arguments]
+        
+        # Dispatch to the appropriate method based on the target type and method name
+        return self.dispatch_method(target, method_name, arguments)
+
+    def dispatch_method(self, target, method_name, arguments):
+        """Dispatch method calls based on target type and method name."""
+        target_type = type(target).__name__
+        
+        # Array methods
+        if isinstance(target, list):
+            if method_name == "push":
+                if len(arguments) != 1:
+                    raise TypeError(f"push() takes exactly 1 argument ({len(arguments)} given)")
+                target.append(arguments[0])
+                return None
+            elif method_name == "pop":
+                if len(arguments) != 0:
+                    raise TypeError(f"pop() takes no arguments ({len(arguments)} given)")
+                if len(target) == 0:
+                    raise IndexError("pop from empty list")
+                return target.pop()
+            elif method_name == "sort":
+                if len(arguments) != 0:
+                    raise TypeError(f"sort() takes no arguments ({len(arguments)} given)")
+                target.sort()
+                return None
+            else:
+                raise AttributeError(f"Array has no method '{method_name}'")
+        
+        # Map (dict) methods
+        elif isinstance(target, dict):
+            if method_name == "get":
+                if len(arguments) != 1:
+                    raise TypeError(f"get() takes exactly 1 argument ({len(arguments)} given)")
+                key = arguments[0]
+                return target.get(key, None)
+            elif method_name == "set":
+                if len(arguments) != 2:
+                    raise TypeError(f"set() takes exactly 2 arguments ({len(arguments)} given)")
+                key, value = arguments
+                if not isinstance(key, (str, int, float, bool, tuple)):
+                    raise TypeError(f"Map keys must be hashable (string, number, bool, or tuple), got {type(key).__name__}")
+                target[key] = value
+                return None
+            elif method_name == "has":
+                if len(arguments) != 1:
+                    raise TypeError(f"has() takes exactly 1 argument ({len(arguments)} given)")
+                key = arguments[0]
+                return key in target
+            elif method_name == "remove":
+                if len(arguments) != 1:
+                    raise TypeError(f"remove() takes exactly 1 argument ({len(arguments)} given)")
+                key = arguments[0]
+                if key in target:
+                    del target[key]
+                    return None
+                else:
+                    raise KeyError(f"Key not found: {key}")
+            else:
+                raise AttributeError(f"Map has no method '{method_name}'")
+        
+        # Set methods
+        elif isinstance(target, set):
+            if method_name == "add":
+                if len(arguments) != 1:
+                    raise TypeError(f"add() takes exactly 1 argument ({len(arguments)} given)")
+                element = arguments[0]
+                if not isinstance(element, (str, int, float, bool, tuple)):
+                    raise TypeError(f"Set elements must be hashable (string, number, bool, or tuple), got {type(element).__name__}")
+                target.add(element)
+                return None
+            elif method_name == "remove":
+                if len(arguments) != 1:
+                    raise TypeError(f"remove() takes exactly 1 argument ({len(arguments)} given)")
+                element = arguments[0]
+                if element in target:
+                    target.remove(element)
+                    return None
+                else:
+                    raise KeyError(f"Element not found: {element}")
+            elif method_name == "has":
+                if len(arguments) != 1:
+                    raise TypeError(f"has() takes exactly 1 argument ({len(arguments)} given)")
+                element = arguments[0]
+                return element in target
+            else:
+                raise AttributeError(f"Set has no method '{method_name}'")
+        
+        # String methods
+        elif isinstance(target, str):
+            if method_name == "split":
+                if len(arguments) != 1:
+                    raise TypeError(f"split() takes exactly 1 argument ({len(arguments)} given)")
+                delimiter = arguments[0]
+                if not isinstance(delimiter, str):
+                    raise TypeError(f"split() delimiter must be a string, got {type(delimiter).__name__}")
+                return target.split(delimiter)
+            else:
+                raise AttributeError(f"String has no method '{method_name}'")
+        
+        # Tuple methods
+        elif isinstance(target, tuple):
+            raise AttributeError(f"Tuple has no method '{method_name}' (tuples are immutable)")
+        
+        else:
+            raise TypeError(f"Type '{target_type}' has no methods")
 
     def load_builtins(self):
         # Add built-in functions to the global environment.
@@ -296,6 +451,14 @@ class Interpreter:
         self.root_environment.assign("len", BuiltinFunction(builtin_len))
         self.root_environment.assign("chr", BuiltinFunction(builtin_chr))
         self.root_environment.assign("ord", BuiltinFunction(builtin_ord))
+        self.root_environment.assign("Map", BuiltinFunction(builtin_map))
+        self.root_environment.assign("Set", BuiltinFunction(builtin_set))
+        self.root_environment.assign("read_file", BuiltinFunction(builtin_read_file))
+        self.root_environment.assign("read_lines", BuiltinFunction(builtin_read_lines))
+        self.root_environment.assign("int", BuiltinFunction(builtin_int))
+        self.root_environment.assign("float", BuiltinFunction(builtin_float))
+        self.root_environment.assign("str", BuiltinFunction(builtin_str))
+        self.root_environment.assign("abs", BuiltinFunction(builtin_abs))
 
 ##############################
 # Built-in function wrapper and definitions
@@ -322,4 +485,67 @@ def builtin_chr(x):
 
 def builtin_ord(x):
     return ord(x)
+
+def builtin_map():
+    """Create an empty map (dict)"""
+    return {}
+
+def builtin_set():
+    """Create an empty set"""
+    return set()
+
+def builtin_read_file(path):
+    """Read entire file as a single string"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File not found: {path}")
+    except IOError as e:
+        raise IOError(f"Error reading file {path}: {e}")
+
+def builtin_read_lines(path):
+    """Read file as an array of lines (without newline characters)"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            # Read lines and strip newline characters
+            return [line.rstrip('\n\r') for line in f.readlines()]
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File not found: {path}")
+    except IOError as e:
+        raise IOError(f"Error reading file {path}: {e}")
+
+def builtin_int(value):
+    """Convert value to integer"""
+    try:
+        if isinstance(value, str):
+            return int(value)
+        elif isinstance(value, (int, float)):
+            return int(value)
+        else:
+            raise TypeError(f"Cannot convert {type(value).__name__} to int")
+    except ValueError as e:
+        raise ValueError(f"Invalid literal for int(): {value}")
+
+def builtin_float(value):
+    """Convert value to float"""
+    try:
+        if isinstance(value, str):
+            return float(value)
+        elif isinstance(value, (int, float)):
+            return float(value)
+        else:
+            raise TypeError(f"Cannot convert {type(value).__name__} to float")
+    except ValueError as e:
+        raise ValueError(f"Invalid literal for float(): {value}")
+
+def builtin_str(value):
+    """Convert value to string"""
+    return str(value)
+
+def builtin_abs(value):
+    """Return absolute value of a number"""
+    if not isinstance(value, (int, float)):
+        raise TypeError(f"abs() requires numeric argument, got {type(value).__name__}")
+    return abs(value)
 

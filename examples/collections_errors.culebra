@@ -1,0 +1,41 @@
+# Error handling tests for collections
+print("=== Error Handling Tests ===")
+
+# Test 1: Empty braces should fail
+print("\n--- Test 1: Empty braces (should fail) ---")
+# Uncommenting this should cause an error:
+# empty = {}
+
+# Test 2: Pop from empty list
+print("\n--- Test 2: Pop from empty list ---")
+arr = []
+# Uncommenting this should cause an error:
+# arr.pop()
+
+# Test 3: Invalid method on array
+print("\n--- Test 3: Invalid method call ---")
+arr2 = [1, 2, 3]
+# Uncommenting this should cause an error:
+# arr2.invalid_method()
+
+# Test 4: Access non-existent map key
+print("\n--- Test 4: Access non-existent map key ---")
+m = {"a": 1}
+# Uncommenting this should cause an error:
+# val = m["nonexistent"]
+
+# Test 5: Remove non-existent set element
+print("\n--- Test 5: Remove non-existent set element ---")
+s = {1, 2, 3}
+# Uncommenting this should cause an error:
+# s.remove(99)
+
+# Test 6: Tuples are immutable (no methods)
+print("\n--- Test 6: Tuples are immutable ---")
+t = (1, 2, 3)
+# Uncommenting this should cause an error:
+# t.push(4)
+
+print("\nAll error tests defined (uncomment to test)")
+print("If you see this, the file runs without errors when tests are commented out")
+

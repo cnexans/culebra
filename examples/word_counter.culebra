@@ -1,0 +1,77 @@
+# Real-world example: Word Counter using Maps and Sets
+# Demonstrates practical usage of the new collection types
+
+def count_words(text):
+    # Initialize collections
+    word_count = Map()
+    unique_words = Set()
+    
+    # Split text into words (simplified - splits on spaces)
+    words = []
+    current_word = ""
+    
+    i = 0
+    while i < len(text):
+        char = text[i]
+        if char == " " or char == "\n":
+            if len(current_word) > 0:
+                words.push(current_word)
+                current_word = ""
+        else:
+            current_word = current_word + char
+        i = i + 1
+    
+    # Don't forget the last word
+    if len(current_word) > 0:
+        words.push(current_word)
+    
+    # Count occurrences
+    i = 0
+    while i < len(words):
+        word = words[i]
+        unique_words.add(word)
+        
+        if word_count.has(word):
+            count = word_count.get(word)
+            word_count.set(word, count + 1)
+        else:
+            word_count.set(word, 1)
+        
+        i = i + 1
+    
+    return (word_count, unique_words, len(unique_words))
+
+# Test the word counter
+print("=== Word Counter Example ===")
+text = "the quick brown fox jumps over the lazy dog the fox"
+
+result = count_words(text)
+counts = result[0]
+unique = result[1]
+num_unique = result[2]
+
+print("\nOriginal text:")
+print(text)
+
+print("\nNumber of unique words:")
+print(num_unique)
+
+print("\nWord frequencies:")
+print(counts)
+
+print("\nUnique words:")
+print(unique)
+
+# Check specific words
+print("\nHow many times does 'the' appear?")
+print(counts.get("the"))
+
+print("\nHow many times does 'fox' appear?")
+print(counts.get("fox"))
+
+print("\nIs 'quick' in the text?")
+print(unique.has("quick"))
+
+print("\nIs 'slow' in the text?")
+print(unique.has("slow"))
+

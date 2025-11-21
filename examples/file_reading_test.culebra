@@ -1,0 +1,23 @@
+# Test file reading
+print("=== Testing File Reading ===")
+
+# Test read_file
+print("\n--- read_file() ---")
+content = read_file("examples/test_data.txt")
+print("File contents:")
+print(content)
+
+# Test read_lines
+print("\n--- read_lines() ---")
+lines = read_lines("examples/test_data.txt")
+print("File as array of lines:")
+print(lines)
+print("\nNumber of lines:")
+print(len(lines))
+
+print("\nIterating through lines:")
+for i = 0; i < len(lines); i = i + 1:
+    print(lines[i])
+
+print("\n=== File reading tests completed! ===")
+

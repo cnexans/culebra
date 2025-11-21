@@ -175,6 +175,7 @@ TokenRegex = {
     TokenType.COMMA: re.compile(r"^,"),
     TokenType.SEMICOLON: re.compile(r"^;"),
     TokenType.COLON: re.compile(r"^:"),
+    TokenType.DOT: re.compile(r"^\."),
 
     # Assignment after equals
     TokenType.EQUAL: re.compile(r"^=="),

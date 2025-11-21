@@ -106,7 +106,7 @@ class Environment:
     def assign_bracket(self, container: any, index: any, value: any) -> None:
         """
         Perform bracket assignment on a container.
-        Currently supports updating list elements.
+        Supports updating list elements and map (dict) values.
         """
         if isinstance(container, list):
             if not isinstance(index, int):
@@ -115,5 +115,10 @@ class Environment:
                 container[index] = value
             except IndexError:
                 raise IndexError("List index out of range")
+        elif isinstance(container, dict):
+            # For maps, the key must be hashable
+            if not isinstance(index, (str, int, float, bool, tuple)):
+                raise TypeError(f"Map keys must be hashable (string, number, bool, or tuple), got {type(index).__name__}")
+            container[index] = value
         else:
-            raise TypeError("Bracket assignment only supported on list, got " + str(type(container)))
+            raise TypeError("Bracket assignment only supported on list and map, got " + str(type(container).__name__))
